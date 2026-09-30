@@ -24,4 +24,21 @@ test.describe('Home Page', () => {
     // Check that the welcome message is present using more specific locator
     await expect(page.getByText('Find your next game! And maybe even back one! Explore our collection!')).toBeVisible();
   });
+
+  test('should let users filter the catalog by category and publisher', async ({ page }) => {
+    const categoryFilter = page.getByTestId('category-filter');
+    const publisherFilter = page.getByTestId('publisher-filter');
+
+    await categoryFilter.selectOption({ label: 'Strategy' });
+    await expect(page.locator('[data-testid="game-card"]:not([hidden])')).toHaveCount(4);
+    await expect(page.getByTestId('results-count')).toContainText('4 games');
+
+    await publisherFilter.selectOption({ label: 'GitHub Games' });
+    await expect(page.locator('[data-testid="game-card"]:not([hidden])')).toHaveCount(1);
+    await expect(page.getByTestId('results-count')).toContainText('1 game');
+    await expect(page.getByRole('link', { name: /Server Siege/i })).toBeVisible();
+
+    await page.getByTestId('clear-filters-button').click();
+    await expect(page.locator('[data-testid="game-card"]:not([hidden])')).toHaveCount(21);
+  });
 });

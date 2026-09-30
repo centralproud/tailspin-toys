@@ -4,11 +4,19 @@ import GameCard from '../components/GameCard.astro';
 import PageHero from '../components/PageHero.astro';
 import EmptyState from '../components/EmptyState.astro';
 import { getDatabase } from '../lib/db';
-import { getAllGames } from '../lib/games';
+import { getAllCategories, getAllGames, getAllPublishers } from '../lib/games';
 
 export const prerender = true;
 
-const games = await getAllGames(getDatabase());
+const categoryParamValues = Astro.url.searchParams.getAll('category').map(Number).filter(Number.isFinite);
+const publisherParamValues = Astro.url.searchParams.getAll('publisher').map(Number).filter(Number.isFinite);
+
+const categories = await getAllCategories(getDatabase());
+const publishers = await getAllPublishers(getDatabase());
+const games = await getAllGames(getDatabase(), {
+    categoryIds: categoryParamValues,
+    publisherIds: publisherParamValues,
+});
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -18,16 +26,158 @@ const games = await getAllGames(getDatabase());
       subtitle="Find your next game! And maybe even back one! Explore our collection!"
     />
 
+    <div class="mb-8 rounded-xl border border-slate-700 bg-slate-800/60 p-5 shadow-lg">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-slate-100">Filter games</h2>
+          <p class="text-sm text-slate-400">Browse by one or more categories and publishers.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <label class="flex flex-col gap-2 text-sm font-medium text-slate-200">
+            <span>Category</span>
+            <select
+              multiple
+              size={Math.min(categories.length + 1, 6)}
+              aria-label="Filter games by category"
+              data-testid="category-filter"
+              class="min-w-52 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              {categories.map((category) => (
+                <option
+                  value={String(category.id)}
+                  selected={categoryParamValues.includes(category.id)}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-2 text-sm font-medium text-slate-200">
+            <span>Publisher</span>
+            <select
+              multiple
+              size={Math.min(publishers.length + 1, 6)}
+              aria-label="Filter games by publisher"
+              data-testid="publisher-filter"
+              class="min-w-52 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              {publishers.map((publisher) => (
+                <option
+                  value={String(publisher.id)}
+                  selected={publisherParamValues.includes(publisher.id)}
+                >
+                  {publisher.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            data-testid="clear-filters-button"
+            class="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            Clear filters
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-4 text-sm text-slate-300" aria-live="polite" data-testid="results-count">
+        {games.length} {games.length === 1 ? 'game' : 'games'}
+      </div>
+    </div>
+
     <div>
       <h2 class="text-2xl font-medium mb-6 text-slate-100">Featured Games</h2>
 
-      {games.length === 0 ? (
-        <EmptyState text="No games available at the moment." />
-      ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
-          {games.map((game) => <GameCard game={game} />)}
-        </div>
-      )}
+      <div class={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 ${games.length === 0 ? 'hidden' : ''}`} data-testid="games-grid">
+        {games.map((game) => <GameCard game={game} />)}
+      </div>
+
+      <div data-testid="filtered-empty-state" class={games.length === 0 ? '' : 'hidden'}>
+        <EmptyState text={games.length === 0 ? 'No games available at the moment.' : 'No games match the selected filters.'} />
+      </div>
     </div>
   </div>
+
+  <script is:inline>
+    const categoryFilter = document.querySelector('[data-testid="category-filter"]');
+    const publisherFilter = document.querySelector('[data-testid="publisher-filter"]');
+    const clearFiltersButton = document.querySelector('[data-testid="clear-filters-button"]');
+    const gamesGrid = document.querySelector('[data-testid="games-grid"]');
+    const resultsCount = document.querySelector('[data-testid="results-count"]');
+    const emptyState = document.querySelector('[data-testid="filtered-empty-state"]');
+    const cards = [...document.querySelectorAll('[data-testid="game-card"]')];
+
+    function applyFilters() {
+      const selectedCategories = new Set(
+        Array.from(categoryFilter.selectedOptions).map((option) => Number(option.value)),
+      );
+      const selectedPublishers = new Set(
+        Array.from(publisherFilter.selectedOptions).map((option) => Number(option.value)),
+      );
+
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const categoryId = card.dataset.gameCategoryId ? Number(card.dataset.gameCategoryId) : null;
+        const publisherId = card.dataset.gamePublisherId ? Number(card.dataset.gamePublisherId) : null;
+
+        const matchesCategory = selectedCategories.size === 0 || (categoryId !== null && selectedCategories.has(categoryId));
+        const matchesPublisher = selectedPublishers.size === 0 || (publisherId !== null && selectedPublishers.has(publisherId));
+        const isVisible = matchesCategory && matchesPublisher;
+
+        card.hidden = !isVisible;
+
+        if (isVisible) {
+          visibleCount += 1;
+        }
+      });
+
+      if (gamesGrid) {
+        gamesGrid.hidden = visibleCount === 0;
+      }
+
+      if (emptyState) {
+        emptyState.hidden = visibleCount !== 0;
+      }
+
+      resultsCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'game' : 'games'}`;
+
+      const params = new URLSearchParams(window.location.search);
+      params.delete('category');
+      params.delete('publisher');
+
+      Array.from(categoryFilter.selectedOptions).forEach((option) => {
+        params.append('category', option.value);
+      });
+
+      Array.from(publisherFilter.selectedOptions).forEach((option) => {
+        params.append('publisher', option.value);
+      });
+
+      const query = params.toString();
+      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+      history.replaceState({}, '', nextUrl);
+    }
+
+    if (categoryFilter && publisherFilter) {
+      categoryFilter.addEventListener('change', applyFilters);
+      publisherFilter.addEventListener('change', applyFilters);
+    }
+
+    if (clearFiltersButton) {
+      clearFiltersButton.addEventListener('click', () => {
+        categoryFilter.selectedIndex = -1;
+        publisherFilter.selectedIndex = -1;
+        applyFilters();
+      });
+    }
+
+    if (categoryFilter && publisherFilter) {
+      applyFilters();
+    }
+  </script>
 </Layout>
