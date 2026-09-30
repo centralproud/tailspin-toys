@@ -18,17 +18,22 @@ const CROWDFUNDING_BLURB = ' Support this game through our crowdfunding platform
  * (""), and newlines inside quoted values. Returns rows keyed by header name.
  */
 export function parseCsv(content: string): Record<string, string>[] {
+    const normalizedContent = content.replace(/^\uFEFF/, '');
+    if (normalizedContent.trim().length === 0) {
+        return [];
+    }
+
     const records: string[][] = [];
     let field = '';
     let record: string[] = [];
     let inQuotes = false;
 
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
+    for (let i = 0; i < normalizedContent.length; i++) {
+        const char = normalizedContent[i];
 
         if (inQuotes) {
             if (char === '"') {
-                if (content[i + 1] === '"') {
+                if (normalizedContent[i + 1] === '"') {
                     field += '"';
                     i++;
                 } else {
@@ -47,7 +52,7 @@ export function parseCsv(content: string): Record<string, string>[] {
             field = '';
         } else if (char === '\n' || char === '\r') {
             // Handle CRLF by skipping the paired \n.
-            if (char === '\r' && content[i + 1] === '\n') {
+            if (char === '\r' && normalizedContent[i + 1] === '\n') {
                 i++;
             }
             record.push(field);
@@ -74,10 +79,12 @@ export function parseCsv(content: string): Record<string, string>[] {
     }
 
     const [header, ...rows] = records;
+    const normalizedHeader = header.map((key) => key.trim());
+
     return rows.map((row) => {
         const entry: Record<string, string> = {};
-        header.forEach((key, index) => {
-            entry[key] = row[index] ?? '';
+        normalizedHeader.forEach((key, index) => {
+            entry[key] = (row[index] ?? '').trim();
         });
         return entry;
     });
@@ -88,11 +95,12 @@ export function parseGamesCsv(content: string): GameCsvRow[] {
     return parseCsv(content)
         .filter((row) => (row.Title ?? '').trim().length > 0)
         .map((row) => ({
-            title: row.Title.trim(),
-            category: row.Category.trim(),
-            publisher: row.Publisher.trim(),
-            description: row.Description.trim(),
-        }));
+            title: (row.Title ?? '').trim(),
+            category: (row.Category ?? '').trim(),
+            publisher: (row.Publisher ?? '').trim(),
+            description: (row.Description ?? '').trim(),
+        }))
+        .filter((row) => row.title.length > 0 && row.category.length > 0 && row.publisher.length > 0);
 }
 
 export function categoryDescription(name: string): string {
@@ -104,17 +112,20 @@ export function publisherDescription(name: string): string {
 }
 
 export function gameDescription(rawDescription: string): string {
-    return rawDescription + CROWDFUNDING_BLURB;
+    const normalizedDescription = rawDescription.trim();
+    return normalizedDescription.endsWith(CROWDFUNDING_BLURB)
+        ? normalizedDescription
+        : normalizedDescription + CROWDFUNDING_BLURB;
 }
 
 /** Distinct category names in first-seen order. */
 export function uniqueCategories(rows: GameCsvRow[]): string[] {
-    return [...new Set(rows.map((row) => row.category))];
+    return [...new Set(rows.map((row) => row.category).filter((name) => name.trim().length > 0))];
 }
 
 /** Distinct publisher names in first-seen order. */
 export function uniquePublishers(rows: GameCsvRow[]): string[] {
-    return [...new Set(rows.map((row) => row.publisher))];
+    return [...new Set(rows.map((row) => row.publisher).filter((name) => name.trim().length > 0))];
 }
 
 /**
