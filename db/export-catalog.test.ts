@@ -13,6 +13,7 @@ import {
 import type { Game } from '../src/types/game';
 import type { Database } from '../src/lib/db';
 
+/** Create a representative game fixture with optional property overrides. */
 function makeGame(overrides: Partial<Game> = {}): Game {
     return {
         id: 1,
@@ -25,6 +26,7 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     };
 }
 
+/** Check recursively whether a value or one of its nested values is null. */
 function containsNull(value: unknown): boolean {
     if (value === null) return true;
     if (Array.isArray(value)) return value.some(containsNull);

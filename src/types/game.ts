@@ -4,19 +4,19 @@
  * helpers in `src/lib/games.ts` and consumed by Astro pages/components.
  */
 
-/** Represents a game publisher (summary form used in listings). */
+/** Publisher summary embedded in game data returned to the UI. */
 export interface Publisher {
     id: number;
     name: string;
 }
 
-/** Represents a game category (summary form used in listings). */
+/** Category summary embedded in game data returned to the UI. */
 export interface Category {
     id: number;
     name: string;
 }
 
-/** Represents a game with its related category and publisher. */
+/** Game data returned by the data-access layer and rendered by the UI. */
 export interface Game {
     id: number;
     title: string;

@@ -84,3 +84,4 @@ describe('getAllGames', () => {
 - Don't mock the database — an in-memory Node SQLite instance is fast and exercises real SQL/joins.
 - Keep fixtures minimal but representative of relationships (game → publisher, game → category).
 - If a schema change breaks tests, regenerate migrations with `npm run db:generate` and update fixtures.
+- Add TSDoc comments to new TypeScript declarations and reusable test helpers. Descriptive test and step titles document individual test cases; do not add redundant TSDoc to each callback.

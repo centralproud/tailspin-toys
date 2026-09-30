@@ -12,6 +12,7 @@ import {
     getGamesByPublisher,
 } from './games';
 
+/** Seed a category, publisher, and games inserted in reverse title order. */
 async function seedGames(db: Database, count: number): Promise<void> {
     const [category] = await db
         .insert(categories)
@@ -34,6 +35,7 @@ async function seedGames(db: Database, count: number): Promise<void> {
     }
 }
 
+/** Seed a small catalog spanning two categories and two publishers. */
 async function seedFilteredCatalog(db: Database): Promise<void> {
     const [strategy] = await db
         .insert(categories)

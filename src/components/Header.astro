@@ -2,21 +2,36 @@
 import Menu from '../assets/icons/menu.svg';
 ---
 
-<header class="bg-blue-500 dark:bg-blue-700 text-white p-4 shadow-md transition-colors duration-300">
-  <div class="container mx-auto flex justify-between items-center pl-4 pr-4">
+<header class="border-b border-slate-700 bg-slate-900/95 p-4 text-slate-100 shadow-lg backdrop-blur-sm transition-colors duration-300">
+  <div class="container mx-auto flex items-center justify-between pl-4 pr-4">
     <div class="flex items-center">
       <div class="relative group">
-        <button id="menu-toggle" class="focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500 rounded mr-4" aria-label="Toggle menu" aria-expanded="false" aria-controls="menu">
+        <button
+          id="menu-toggle"
+          type="button"
+          data-testid="header-menu-toggle"
+          class="mr-4 rounded-md border border-slate-700 bg-slate-800 p-2 text-slate-100 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+          aria-controls="menu"
+        >
           <Menu class="h-6 w-6" aria-hidden="true" />
         </button>
-        <nav id="menu" aria-label="Main" class="hidden absolute left-0 mt-2 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded shadow-lg z-10 transition-colors duration-300">
+        <nav
+          id="menu"
+          aria-label="Main"
+          data-testid="header-menu"
+          class="absolute left-0 z-10 mt-2 hidden w-48 rounded-lg border border-slate-700 bg-slate-800 text-slate-100 shadow-xl"
+        >
           <ul class="py-1">
-            <li><a href="/" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">Home</a></li>
-            <li><a href="/about" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">About</a></li>
+            <li><a href="/" data-testid="header-home-link" class="block px-4 py-2 text-sm transition hover:bg-slate-700 hover:text-white">Home</a></li>
+            <li><a href="/about" data-testid="header-about-link" class="block px-4 py-2 text-sm transition hover:bg-slate-700 hover:text-white">About</a></li>
           </ul>
         </nav>
       </div>
-      <div class="text-xl font-bold"><a href="/" class="hover:underline">Tailspin Toys</a></div>
+      <div class="text-xl font-bold">
+        <a href="/" data-testid="header-brand-link" class="text-slate-100 hover:text-blue-400 hover:underline">Tailspin Toys</a>
+      </div>
     </div>
   </div>
 </header>
