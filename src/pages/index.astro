@@ -10,6 +10,7 @@ export const prerender = true;
 
 const categoryParamValues = Astro.url.searchParams.getAll('category').map(Number).filter(Number.isFinite);
 const publisherParamValues = Astro.url.searchParams.getAll('publisher').map(Number).filter(Number.isFinite);
+const hasAppliedFilters = categoryParamValues.length > 0 || publisherParamValues.length > 0;
 
 const categories = await getAllCategories(getDatabase());
 const publishers = await getAllPublishers(getDatabase());
@@ -17,6 +18,7 @@ const games = await getAllGames(getDatabase(), {
     categoryIds: categoryParamValues,
     publisherIds: publisherParamValues,
 });
+const emptyStateText = hasAppliedFilters ? 'No games match the selected filters.' : 'No games available at the moment.';
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -97,7 +99,7 @@ const games = await getAllGames(getDatabase(), {
       </div>
 
       <div data-testid="filtered-empty-state" class={games.length === 0 ? '' : 'hidden'}>
-        <EmptyState text={games.length === 0 ? 'No games available at the moment.' : 'No games match the selected filters.'} />
+        <EmptyState text={emptyStateText} />
       </div>
     </div>
   </div>
@@ -118,6 +120,7 @@ const games = await getAllGames(getDatabase(), {
       const selectedPublishers = new Set(
         Array.from(publisherFilter.selectedOptions).map((option) => Number(option.value)),
       );
+      const hasSelection = selectedCategories.size > 0 || selectedPublishers.size > 0;
 
       let visibleCount = 0;
 
@@ -142,6 +145,16 @@ const games = await getAllGames(getDatabase(), {
 
       if (emptyState) {
         emptyState.hidden = visibleCount !== 0;
+      }
+
+      if (emptyState) {
+        const emptyStateMessage = hasSelection
+          ? 'No games match the selected filters.'
+          : 'No games available at the moment.';
+        const emptyStateText = emptyState.querySelector('[data-testid="empty-state-text"]');
+        if (emptyStateText) {
+          emptyStateText.textContent = emptyStateMessage;
+        }
       }
 
       resultsCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'game' : 'games'}`;

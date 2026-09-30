@@ -31,6 +31,11 @@ describe('parseCsv', () => {
     it('returns an empty array for empty input', () => {
         expect(parseCsv('')).toEqual([]);
     });
+
+    it('ignores a UTF-8 BOM at the start of the file', () => {
+        const rows = parseCsv('\uFEFFTitle,Category\n"Game A","Strategy"');
+        expect(rows).toEqual([{ Title: 'Game A', Category: 'Strategy' }]);
+    });
 });
 
 describe('parseGamesCsv', () => {
@@ -56,6 +61,13 @@ describe('parseGamesCsv', () => {
         const rows = parseGamesCsv('Title,Category,Publisher,Description\n,,,');
         expect(rows).toHaveLength(0);
     });
+
+    it('skips rows with blank category or publisher values', () => {
+        const rows = parseGamesCsv(
+            'Title,Category,Publisher,Description\n"Game A","","Pub One","Desc A"\n"Game B","Strategy","","Desc B"',
+        );
+        expect(rows).toHaveLength(0);
+    });
 });
 
 describe('description helpers', () => {
@@ -75,6 +87,11 @@ describe('description helpers', () => {
         expect(gameDescription('A great game.')).toBe(
             'A great game. Support this game through our crowdfunding platform!',
         );
+    });
+
+    it('does not duplicate the crowdfunding blurb when it is already present', () => {
+        const description = 'A great game. Support this game through our crowdfunding platform!';
+        expect(gameDescription(description)).toBe(description);
     });
 });
 
