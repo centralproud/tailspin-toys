@@ -4,8 +4,12 @@ import { categories, publishers, games } from '../../db/schema';
 import type { Database } from './db';
 import {
     getAllGames,
+    getAllCategories,
     getAllGameIds,
+    getAllPublishers,
     getGameById,
+    getGamesByCategory,
+    getGamesByPublisher,
 } from './games';
 
 async function seedGames(db: Database, count: number): Promise<void> {
@@ -30,6 +34,32 @@ async function seedGames(db: Database, count: number): Promise<void> {
     }
 }
 
+async function seedFilteredCatalog(db: Database): Promise<void> {
+    const [strategy] = await db
+        .insert(categories)
+        .values({ name: 'Strategy', description: 'strategy' })
+        .returning({ id: categories.id });
+    const [puzzle] = await db
+        .insert(categories)
+        .values({ name: 'Puzzle', description: 'puzzle' })
+        .returning({ id: categories.id });
+    const [codeforge] = await db
+        .insert(publishers)
+        .values({ name: 'CodeForge Studios', description: 'codeforge' })
+        .returning({ id: publishers.id });
+    const [devmasters] = await db
+        .insert(publishers)
+        .values({ name: 'DevMasters Inc.', description: 'devmasters' })
+        .returning({ id: publishers.id });
+
+    await db.insert(games).values([
+        { title: 'Alpha Tactics', description: 'A strategy title', starRating: 4.2, categoryId: strategy.id, publisherId: codeforge.id },
+        { title: 'Beta Tactics', description: 'Another strategy title', starRating: 4.7, categoryId: strategy.id, publisherId: devmasters.id },
+        { title: 'Gamma Puzzles', description: 'A puzzle title', starRating: 3.8, categoryId: puzzle.id, publisherId: codeforge.id },
+        { title: 'Delta Puzzles', description: 'Another puzzle title', starRating: 4.8, categoryId: puzzle.id, publisherId: devmasters.id },
+    ]);
+}
+
 describe('games data-access helpers', () => {
     let db: Database;
 
@@ -43,6 +73,36 @@ describe('games data-access helpers', () => {
         expect(all.map((g) => g.title)).toEqual(['Game 01', 'Game 02', 'Game 03']);
         expect(all[0].category).toEqual({ id: expect.any(Number), name: 'Strategy' });
         expect(all[0].publisher).toEqual({ id: expect.any(Number), name: 'Pub One' });
+    });
+
+    it('filters games by a single category', async () => {
+        await seedFilteredCatalog(db);
+        const results = await getGamesByCategory(db, 1);
+        expect(results.map((game) => game.title)).toEqual(['Alpha Tactics', 'Beta Tactics']);
+    });
+
+    it('filters games by multiple category ids and publishers together', async () => {
+        await seedFilteredCatalog(db);
+        const results = await getAllGames(db, {
+            categoryIds: [1],
+            publisherIds: [2],
+        });
+
+        expect(results.map((game) => game.title)).toEqual(['Beta Tactics']);
+    });
+
+    it('lists all categories and publishers in sorted order', async () => {
+        await seedFilteredCatalog(db);
+
+        expect(await getAllCategories(db)).toEqual([
+            { id: expect.any(Number), name: 'Puzzle' },
+            { id: expect.any(Number), name: 'Strategy' },
+        ]);
+
+        expect(await getAllPublishers(db)).toEqual([
+            { id: expect.any(Number), name: 'CodeForge Studios' },
+            { id: expect.any(Number), name: 'DevMasters Inc.' },
+        ]);
     });
 
     it('returns all game ids ordered by title', async () => {
@@ -62,5 +122,11 @@ describe('games data-access helpers', () => {
     it('returns null for a non-existent game', async () => {
         await seedGames(db, 2);
         expect(await getGameById(db, 99999)).toBeNull();
+    });
+
+    it('filters games by publisher', async () => {
+        await seedFilteredCatalog(db);
+        const results = await getGamesByPublisher(db, [2]);
+        expect(results.map((game) => game.title)).toEqual(['Beta Tactics', 'Delta Puzzles']);
     });
 });

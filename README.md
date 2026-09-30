@@ -42,6 +42,10 @@ npm run build      # prebuild migrates + seeds, then builds the static site
 npm run preview
 ```
 
+## Catalog browsing
+
+The home page includes category and publisher filters so players can narrow the catalog by one or more values at a time. The filtering logic is supported by the data-access helpers in `src/lib/games.ts`, which accept category and publisher IDs in addition to the default title ordering.
+
 ## Database
 
 The SQLite database is built from `db/games.csv` — there is no live data to migrate.
