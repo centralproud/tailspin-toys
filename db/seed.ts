@@ -16,6 +16,13 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Insert categories that do not already exist and return their database ids.
+ *
+ * @param db - Database receiving the category rows.
+ * @param names - Category names to look up or insert.
+ * @returns A map from each category name to its database id.
+ */
 async function upsertCategories(db: Database, names: string[]): Promise<Map<string, number>> {
     const map = new Map<string, number>();
     for (const name of names) {
@@ -33,6 +40,13 @@ async function upsertCategories(db: Database, names: string[]): Promise<Map<stri
     return map;
 }
 
+/**
+ * Insert publishers that do not already exist and return their database ids.
+ *
+ * @param db - Database receiving the publisher rows.
+ * @param names - Publisher names to look up or insert.
+ * @returns A map from each publisher name to its database id.
+ */
 async function upsertPublishers(db: Database, names: string[]): Promise<Map<string, number>> {
     const map = new Map<string, number>();
     for (const name of names) {
@@ -50,7 +64,12 @@ async function upsertPublishers(db: Database, names: string[]): Promise<Map<stri
     return map;
 }
 
-/** Seed the database from the games CSV. Idempotent: skips existing games by title. */
+/**
+ * Seed categories, publishers, and games from a CSV, skipping existing rows.
+ *
+ * @param db - Database to seed.
+ * @param csvPath - CSV file to read; defaults to `db/games.csv`.
+ */
 export async function seedDatabase(db: Database, csvPath: string = join(here, 'games.csv')): Promise<void> {
     const rows = parseGamesCsv(readFileSync(csvPath, 'utf-8'));
 

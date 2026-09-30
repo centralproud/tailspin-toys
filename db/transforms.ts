@@ -4,10 +4,15 @@
  * in isolation and reused by the seed script.
  */
 
+/** A normalized game record parsed from the seed CSV. */
 export interface GameCsvRow {
+    /** Game title from the seed CSV. */
     title: string;
+    /** Category assigned to the game. */
     category: string;
+    /** Publisher of the game. */
     publisher: string;
+    /** Original game description. */
     description: string;
 }
 
@@ -83,7 +88,12 @@ export function parseCsv(content: string): Record<string, string>[] {
     });
 }
 
-/** Parse the games seed CSV into typed rows. */
+/**
+ * Parse the games seed CSV into trimmed game records, skipping rows without a title.
+ *
+ * @param content - Raw CSV text with the expected game columns.
+ * @returns Valid game rows in the same order as the input.
+ */
 export function parseGamesCsv(content: string): GameCsvRow[] {
     return parseCsv(content)
         .filter((row) => (row.Title ?? '').trim().length > 0)
@@ -95,24 +105,27 @@ export function parseGamesCsv(content: string): GameCsvRow[] {
         }));
 }
 
+/** Build the standard crowdfunding description for a category. */
 export function categoryDescription(name: string): string {
     return `Collection of ${name} games available for crowdfunding`;
 }
 
+/** Build the standard crowdfunding description for a publisher. */
 export function publisherDescription(name: string): string {
     return `${name} is a game publisher seeking funding for exciting new titles`;
 }
 
+/** Append the platform's standard crowdfunding blurb to a game description. */
 export function gameDescription(rawDescription: string): string {
     return rawDescription + CROWDFUNDING_BLURB;
 }
 
-/** Distinct category names in first-seen order. */
+/** Return distinct category names in their first-seen order. */
 export function uniqueCategories(rows: GameCsvRow[]): string[] {
     return [...new Set(rows.map((row) => row.category))];
 }
 
-/** Distinct publisher names in first-seen order. */
+/** Return distinct publisher names in their first-seen order. */
 export function uniquePublishers(rows: GameCsvRow[]): string[] {
     return [...new Set(rows.map((row) => row.publisher))];
 }

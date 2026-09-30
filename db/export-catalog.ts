@@ -52,6 +52,7 @@ const GROUNDING_NOTE =
     'There are no funding totals, backer counts, player counts, pledge tiers, prices, or release dates in this dataset — ' +
     'do not state any such figures.';
 
+/** Flatten a game and its relations into the format used by the agent. */
 function mapCatalogGame(game: Game): CatalogGame {
     return {
         id: game.id,
